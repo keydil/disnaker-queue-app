@@ -64,7 +64,7 @@ export default function QueueDisplay() {
   useEffect(() => {
     const switchInterval = setInterval(() => {
       setViewMode((prev) => (prev === "grid" ? "split" : "grid"));
-    }, 43000); 
+    }, 20000); 
     return () => clearInterval(switchInterval);
   }, []);
 

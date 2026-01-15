@@ -19,6 +19,17 @@ export default function AdminPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const handleRefreshTV = () => {
+    // Cek apakah jalan di Electron
+    if (window.require) {
+      const { ipcRenderer } = window.require("electron");
+      ipcRenderer.send("buka-layar-tv"); // Kirim sinyal sakti ke main.js
+      // Kasih feedback visual dikit biar keren
+      alert("Sinyal dikirim! Tunggu sebentar layar TV akan muncul...");
+    } else {
+      alert("Fitur ini cuma jalan di mode Kiosk (Electron) ya bro!");
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -143,6 +154,18 @@ export default function AdminPage() {
               <CardTitle>Menu Tambahan</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <button
+                onClick={handleRefreshTV} // Panggil fungsinya di sini
+                className="border border-indigo-200 bg-indigo-50 text-indigo-700 rounded p-3 hover:bg-indigo-100 cursor-pointer flex items-center gap-3 text-left w-full transition-colors"
+              >
+                <span className="text-xl">🔄</span>
+                <div>
+                  <span className="font-semibold">Refresh Layar TV</span>
+                  <p className="text-xs text-indigo-500">
+                    Klik jika monitor TV mati/tidak muncul
+                  </p>
+                </div>
+              </button>
               <Link href="/admin/display">
                 <Button
                   variant="outline"
