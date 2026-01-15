@@ -8,6 +8,16 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { useRouter } from "next/navigation";
 
+// Tambahkan ini supaya window.electron tidak merah lagi
+declare global {
+  interface Window {
+    electron: {
+      ipcRenderer: {
+        send: (channel: string, data?: any) => void;
+      };
+    };
+  }
+}
 interface Queue {
   id: string;
   queue_number: number;
@@ -40,29 +50,37 @@ export default function TicketDisplay({ queue, position }: TicketDisplayProps) {
     setCurrentTime(now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }));
   }, []);
 
-  useEffect(() => {
-    if (qrCanvasRef.current) {
-      const qrUrl = `${window.location.origin}/queue/status/${queue.id}`;
-      QRCode.toCanvas(qrCanvasRef.current, qrUrl, { width: 100, margin: 0 });
+ // Timer Cetak Otomatis & Listener Electron
+useEffect(() => {
+  if (qrCanvasRef.current) {
+    const qrUrl = `${window.location.origin}/queue/status/${queue.id}`;
+    QRCode.toCanvas(qrCanvasRef.current, qrUrl, { width: 100, margin: 0 });
+  }
+
+  // --- REVISI DI SINI ---
+  const printTimer = setTimeout(() => {
+    // Cek apakah jalan di dalam Electron
+    if (window.electron && window.electron.ipcRenderer) {
+      // Panggil listener baris 30 di foto electron-main.js lu
+      window.electron.ipcRenderer.send('print-langsung');
+    } else {
+      // Fallback kalau dibuka di browser biasa (muncul popup)
+      window.print();
     }
+  }, 1000); // Kasih waktu 1 detik biar QR & CSS bener-bener siap
 
-    // Timer Cetak Otomatis
-    const printTimer = setTimeout(() => window.print(), 800);
+  const interval = setInterval(() => {
+    setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+  }, 1000);
 
-    // Timer Countdown Angka
-    const interval = setInterval(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
+  const redirectTimer = setTimeout(() => router.push("/"), 5000);
 
-    // Redirect otomatis setelah 5 detik
-    const redirectTimer = setTimeout(() => router.push("/"), 5000);
-
-    return () => {
-      clearTimeout(printTimer);
-      clearTimeout(redirectTimer);
-      clearInterval(interval);
-    };
-  }, [queue.id, router]);
+  return () => {
+    clearTimeout(printTimer);
+    clearTimeout(redirectTimer);
+    clearInterval(interval);
+  };
+}, [queue.id, router]);
 
   const handlePrint = () => window.print();
 
